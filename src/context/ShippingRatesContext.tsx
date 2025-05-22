@@ -1,5 +1,8 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { database } from "@/services/firebase";
+import { ref, get } from "firebase/database";
+import { toast } from "sonner";
 
 // Define types for our shipping rate data
 export type ShippingRate = {
@@ -140,11 +143,38 @@ const ShippingRatesContext = createContext<ShippingRatesContextType | null>(null
 
 export const ShippingRatesProvider = ({ children }: { children: ReactNode }) => {
   const [rates, setRates] = useState<ShippingRatesData>(defaultRates);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [route, setRoute] = useState<string>("YGN-BKK");
   const [type, setType] = useState<string>("all");
   const [weightSearch, setWeightSearch] = useState<string>("");
   const [filteredRates, setFilteredRates] = useState<ShippingRate[]>([]);
+
+  // Fetch rates from Firebase
+  useEffect(() => {
+    const fetchRates = async () => {
+      setLoading(true);
+      try {
+        const shippingRatesRef = ref(database, 'shippingRates');
+        const snapshot = await get(shippingRatesRef);
+        
+        if (snapshot.exists()) {
+          const firebaseRates = snapshot.val();
+          setRates(firebaseRates);
+          toast.success("Firebase ဒေတာများ ရယူပြီးပါပြီ");
+        } else {
+          console.log("No data available in Firebase, using default rates");
+          // Using default rates which are already set in the initial state
+        }
+      } catch (error) {
+        console.error("Error fetching rates:", error);
+        toast.error("Firebase ဒေတာများ ရယူရာတွင် အမှားရှိနေပါသည်");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRates();
+  }, []);
 
   // Filter rates based on route, type, and weight search
   useEffect(() => {

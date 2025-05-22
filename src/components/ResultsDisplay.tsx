@@ -8,8 +8,8 @@ const ResultsDisplay = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-16">
-        <div className="loading-spinner"></div>
-        <span className="ml-4 text-white text-lg">ဒေတာများ ရယူနေသည်...</span>
+        <div className="w-10 h-10 rounded-full border-4 border-primary/10 border-l-primary animate-spin"></div>
+        <span className="ml-4 text-white text-lg">Firebase မှ ဒေတာများ ရယူနေသည်...</span>
       </div>
     );
   }
