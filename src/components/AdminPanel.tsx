@@ -1,10 +1,13 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useAdminAuth } from "@/context/AdminAuthContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 const AdminPanel = () => {
   const { logOut } = useAdminAuth();
+  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <div className="glass-effect rounded-xl shadow-lg p-8 mb-8">
@@ -28,6 +31,20 @@ const AdminPanel = () => {
           </svg>
           အကောင့်ထွက်ရန်
         </Button>
+      </div>
+      
+      {/* Add search box */}
+      <div className="mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Input
+            type="text"
+            placeholder="နှုန်းထားများ ရှာရန်..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-white/90 border-2 border-transparent transition-all duration-300 focus:bg-white focus:border-primary focus:outline-none shadow"
+          />
+        </div>
       </div>
       
       <div className="text-white">
