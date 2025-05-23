@@ -1,5 +1,5 @@
 
-import { ShippingRate } from "@/context/ShippingRatesContext";
+import { ShippingRate } from "@/types/shipping";
 
 interface RateCardProps {
   rate: ShippingRate;
