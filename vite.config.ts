@@ -5,6 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: "/myanmar-shipping-rates-calc/", // GitHub Pages သုံးမယ်ဆိုရင် ဒီလိုထည့်ပါ
   server: {
     host: "::",
     port: 8080,
