@@ -5,12 +5,20 @@ import { useShippingRates, ShippingRate } from "@/context/ShippingRatesContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Edit, Save } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { database } from "@/services/firebase";
 import { ref, update } from "firebase/database";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import { 
+  AlertDialog, 
+  AlertDialogContent, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel
+} from "@/components/ui/alert-dialog";
 
 const AdminPanel = () => {
   const { logOut } = useAdminAuth();
@@ -20,6 +28,7 @@ const AdminPanel = () => {
   const [editingRate, setEditingRate] = useState<ShippingRate | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Record<string, string>>({});
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Filter rates based on search query
   useEffect(() => {
@@ -58,6 +67,11 @@ const AdminPanel = () => {
     }));
   };
 
+  const handleSaveClick = () => {
+    // Show confirmation dialog
+    setShowConfirmDialog(true);
+  };
+
   const handleSave = async () => {
     if (!editingRate || !route) return;
     
@@ -94,9 +108,22 @@ const AdminPanel = () => {
       
       setIsEditing(false);
       setEditingRate(null);
+      setShowConfirmDialog(false);
     } catch (error) {
       console.error("Error updating rate:", error);
       toast.error("နှုန်းထား အချက်အလက် ပြင်ဆင်မှု မအောင်မြင်ပါ");
+    }
+  };
+
+  // Labels for the fields in Burmese
+  const getFieldLabel = (key: string) => {
+    switch (key) {
+      case 'BKK': return 'ဘန်ကောက်';
+      case 'OtherCity': return 'အခြားမြို့များ';
+      case 'RemoteArea': return 'ဝေးလံဒေသ';
+      case 'New': return 'အသစ်';
+      case 'Used': return 'အသုံးပြုပြီး';
+      default: return key;
     }
   };
 
@@ -223,7 +250,7 @@ const AdminPanel = () => {
         )}
       </div>
       
-      {/* Edit Dialog */}
+      {/* Edit Sheet */}
       <Sheet open={isEditing} onOpenChange={setIsEditing}>
         <SheetContent>
           <SheetHeader>
@@ -239,6 +266,7 @@ const AdminPanel = () => {
                 </div>
               </div>
               
+              {/* Edit form with clear Burmese labels */}
               {Object.entries(editData).map(([key, value]) => {
                 // Skip type and Kg as they're not editable
                 if (key === 'type' || key === 'Kg') return null;
@@ -246,16 +274,13 @@ const AdminPanel = () => {
                 return (
                   <div key={key} className="space-y-2">
                     <label className="block text-sm font-medium">
-                      {key === 'BKK' ? 'ဘန်ကောက်' : 
-                       key === 'OtherCity' ? 'အခြားမြို့များ' : 
-                       key === 'RemoteArea' ? 'ဝေးလံဒေသ' :
-                       key === 'New' ? 'အသစ်' :
-                       key === 'Used' ? 'အသုံးပြုပြီး' : key}:
+                      {getFieldLabel(key)}:
                     </label>
                     <Input 
                       type="text" 
                       value={value} 
                       onChange={(e) => handleInputChange(key, e.target.value)} 
+                      className="bg-white border border-gray-300"
                     />
                   </div>
                 );
@@ -267,13 +292,60 @@ const AdminPanel = () => {
             <Button variant="outline" onClick={() => setIsEditing(false)}>
               ပိတ်မည်
             </Button>
-            <Button onClick={handleSave}>
+            <Button onClick={handleSaveClick}>
               <Save size={16} className="mr-2" />
               သိမ်းဆည်းမည်
             </Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
+
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>နှုန်းထား ပြင်ဆင်ခြင်းအား အတည်ပြုပါ</AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <p>အောက်ပါနှုန်းထားများကို ပြင်ဆင်ရန် သေချာပါသလား?</p>
+            
+            {editingRate && (
+              <div className="mt-4 p-4 bg-gray-100 rounded-md">
+                <div className="font-bold mb-2">
+                  {editingRate.Kg} Kg - {editingRate.type === "Food" ? "အစားအသောက်" : 
+                                        editingRate.type === "Cosmetic" ? "အလှကုန်ပစ္စည်း" : "အီလက်ထရောနစ်"}
+                </div>
+                
+                {Object.entries(editData).map(([key, value]) => {
+                  if (key === 'type' || key === 'Kg') return null;
+                  
+                  // Compare with original value
+                  const originalValue = (editingRate as any)[key];
+                  const hasChanged = originalValue !== value;
+                  
+                  return (
+                    <div key={key} className="grid grid-cols-2 gap-2 mb-2">
+                      <div>{getFieldLabel(key)}:</div>
+                      <div className={`font-semibold ${hasChanged ? "text-blue-600" : ""}`}>
+                        {hasChanged ? (
+                          <>
+                            <span className="line-through text-gray-400 mr-2">{originalValue}</span>
+                            {value}
+                          </>
+                        ) : value}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ပယ်ဖျက်မည်</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSave}>သေချာပါသည်</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
